@@ -17,11 +17,12 @@ SEED = 42
 ga_args_dict = {"population_size": POPULATION_SIZE, "mutation_rate": MUTATION_RATE,
                 "update_ratio": UPDATE_RATIO, "dim": DIMENSION}
 
+
 class GA:
     """The generic algorithm implementation."""
 
     def __init__(self, population_size, mutation_rate, update_ratio, dim, seed=42, budget=5000,
-                 tournament_k=5, tournament_p=0.5):
+                 tournament_k=5, tournament_p=0.8):
         """
         :param population_size: int. Only consider the GA whose population size is greater than 1.
         :param mutation_rate: float.
@@ -30,9 +31,11 @@ class GA:
         :param seed: int. Random seed. (default:42)
         :param budget: int. Budget for each run. (default: 5000)
         :param tournament_k: int. The number of individuals used in tournament selection. (default: 5)
-        :param tournament_p: float. The probability of selecting a individual in tournament selection. (default: 0.5)
+        :param tournament_p: float. The probability of selecting a individual in tournament selection. (default: 0.8)
         """
         assert population_size > 1, "The population size should be an integer greater than 1."
+        assert tournament_k <= population_size, ("The tournament size should be less than or equal to the population "
+                                                 "size.")
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.update_number = max(int(update_ratio * population_size), 1)
@@ -106,14 +109,12 @@ class GA:
         :return: np.array.
             An array of two selected parents.
         """
-        if strategy == "prop" or strategy == "rank":
+        if strategy in self.selection_table.keys():
             if self.selection_probabilities is None:
                 self.selection_table[strategy]()
             np.random.seed(self.seed)
             self.seed += 1
             return np.random.choice(np.array(self.population), size=2, replace=False, p=self.selection_probabilities)
-        elif strategy == "tour":
-            return self.selection_table[strategy]()
         else:
             raise KeyError(f"{strategy} is an invalid selection strategy.")
 
@@ -127,12 +128,25 @@ class GA:
 
     def _rank_based_selection(self):
         """The selected probability is proportional to the ranking of the fitness."""
+        rank_arr = np.arange(1, self.population_size + 1)
+        self.selection_probabilities = (2 * rank_arr) / (self.population_size * (self.population_size + 1))
 
     def _tournament_selection(self):
-        """Tournament selection implementation.
-        :return: np.array.
-            An array of two selected parents.
-        """
+        """Tournament selection implementation."""
+        np.random.seed(self.seed)
+        self.seed += 1
+        index = np.random.choice(np.arange(self.population_size), size=self.tournament_k, replace=False)
+        probability = list()
+        pointer = 0
+        for i in range(self.population_size - 1, -1, -1):
+            if i in index:
+                probability.append(self.tournament_p * ((1 - self.tournament_p) ** pointer))
+                pointer += 1
+            else:
+                probability.append(0)
+        probability.reverse()
+        probability = np.array(probability)
+        self.selection_probabilities = probability / probability.sum()
 
     def _one_point_crossover(self, parents_arr):
         """Perform the crossover on one random point.
@@ -153,7 +167,8 @@ class GA:
         """Update the population partially."""
         update_number = self.update_number
         while self.budget > 0 and update_number > 0:
-            parents = self._selection("prop")
+            parents = self._selection("tour")
+            self.selection_probabilities = None
             child = self._one_point_crossover(parents)
             self.population.pop(0)
             self.population.append(child)
@@ -163,7 +178,6 @@ class GA:
             if self.budget > 0:
                 self._mutation(instance)
         self.population.sort(key=lambda x: x.fitness)
-        self.selection_probabilities = None
 
     def __call__(self, func):
         """Implement the genetic algorithm."""
