@@ -1,49 +1,60 @@
-from ioh import get_problem, ProblemClass
-from ioh import logger
+from ioh import get_problem, logger, ProblemClass
 import random
 import numpy as np
 from ast import literal_eval
 import time
+import copy
 
 # Parameter settings.
-PROBLEM_ID = 18
 RUNS = 20
-DIMENSION = 10
-POPULATION_SIZE = 10
-MUTATION_RATE = 0.1
-UPDATE_RATIO = 0.1
+DIMENSION = 50
 SEED = 42
+BUDGET = 5000
 
-ga_args_dict = {"population_size": POPULATION_SIZE, "mutation_rate": MUTATION_RATE,
-                "update_ratio": UPDATE_RATIO, "dim": DIMENSION}
+# Hyperparameters
+F18_POPULATION_SIZE = 20
+F18_MUTATION_RATE = -1.0
+F18_UPDATE_RATIO = 0.4
+
+F19_POPULATION_SIZE = 20
+F19_MUTATION_RATE = 0.02
+F19_UPDATE_RATIO = 0.4
+
+ga_f18_args_dict = {"population_size": F18_POPULATION_SIZE, "mutation_rate": F18_MUTATION_RATE,
+                    "update_ratio": F18_UPDATE_RATIO, "dim": DIMENSION, "budget": BUDGET,
+                    "seed": SEED}
+ga_f19_args_dict = {"population_size": F19_POPULATION_SIZE, "mutation_rate": F19_MUTATION_RATE,
+                    "update_ratio": F19_UPDATE_RATIO, "dim": DIMENSION, "budget": BUDGET,
+                    "seed": SEED}
 
 
 class GA:
     """The generic algorithm implementation."""
 
-    def __init__(self, population_size, mutation_rate, update_ratio, dim, seed=42, budget=5000,
-                 tournament_k=5, tournament_p=0.8):
+    def __init__(self, population_size, update_ratio, dim, problem, seed, budget, mutation_rate=-1.0,
+                 tournament_p=0.8):
         """
         :param population_size: int. Only consider the GA whose population size is greater than 1.
-        :param mutation_rate: float.
         :param update_ratio: float. The ratio of updating the population.
         :param dim: int. Dimension of the search space.
-        :param seed: int. Random seed. (default:42)
-        :param budget: int. Budget for each run. (default: 5000)
-        :param tournament_k: int. The number of individuals used in tournament selection. (default: 5)
+        :param problem: ioh Problem instance.
+        :param seed: int. Random seed.
+        :param budget: int. Budget for each run.
+        :param mutation_rate: float. If using the fixed mutation rate, it should be a value in (0, 1). If
+                              the mutation rate equals -1.0, use the annealing schedule. (default: -1.0)
         :param tournament_p: float. The probability of selecting a individual in tournament selection. (default: 0.8)
         """
         assert population_size > 1, "The population size should be an integer greater than 1."
-        assert tournament_k <= population_size, ("The tournament size should be less than or equal to the population "
-                                                 "size.")
         self.population_size = population_size
         self.mutation_rate = mutation_rate
         self.update_number = max(int(update_ratio * population_size), 1)
         self.dim = dim
         self.seed = seed
+        self.fix_seed = seed
+        self.problem = problem
         self.budget = budget
         self.fix_budget = budget
-        self.tournament_k = tournament_k
+        self.tournament_k = population_size
         self.tournament_p = tournament_p
         self.selection_probabilities = None
         self.selection_table = {
@@ -161,19 +172,32 @@ class GA:
 
     def _mutation(self, instance):
         """Mutation operator."""
-        instance.mutation(self.mutation_rate)
+        if self.mutation_rate < 0:
+            if self.budget < 3000:
+                instance.mutation(1 / self.dim)
+            else:
+                instance.mutation(0.1)
+        else:
+            instance.mutation(self.mutation_rate)
 
     def _ga_subroutine(self):
         """Update the population partially."""
         update_number = self.update_number
         while self.budget > 0 and update_number > 0:
-            parents = self._selection("tour")
+            # prop -> rank -> tour
+            if (self.fix_budget - self.budget) < 2000:
+                parents = self._selection("prop")
+            elif 2000 <= (self.fix_budget - self.budget) < 3000:
+                parents = self._selection("rank")
+            else:
+                parents = self._selection("tour")
             self.selection_probabilities = None
             child = self._one_point_crossover(parents)
-            self.population.pop(0)
-            self.population.append(child)
-            self.population.sort(key=lambda x: x.fitness)
-            update_number -= 1
+            if self.population[0].fitness < child.fitness:
+                self.population.pop(0)
+                self.population.append(child)
+                self.population.sort(key=lambda x: x.fitness)
+                update_number -= 1
         for instance in self.population:
             if self.budget > 0:
                 self._mutation(instance)
@@ -194,27 +218,89 @@ class GA:
     def reset(self):
         """Reset the state."""
         self.budget = self.fix_budget
+        self.fix_seed += 1
+        self.seed = self.fix_seed
 
 
-def ga_main(ga_args, problem_id):
+def ga_main(ga_args, problem_id, info=None):
+    """Run the GA algorithm.
+    :param ga_args: dict. Parameters defined in GA algorithm.
+    :param problem_id: int. 18 or 19.
+    :param info: dict. The information of the algorithm.
+    """
     start = time.time()
+    problem = get_problem(fid=problem_id, dimension=ga_args["dim"], instance=1, problem_class=ProblemClass.PBO)
+    ga_args["problem"] = problem
     algorithm = GA(**ga_args)
-    problem = get_problem(fid=problem_id, dimension=ga_args["dim"], problem_class=ProblemClass.PBO)
-    ga_logger = logger.Analyzer(root="../data",
-                                folder_name="run",
-                                algorithm_name=f"GA: F{PROBLEM_ID}",
-                                algorithm_info=f"GA: F{PROBLEM_ID}"
-                                )
+    if info is not None:
+        ga_logger = logger.Analyzer(root="data",
+                                    folder_name=f"{info['run']} {info['param']} run",
+                                    algorithm_name=f"s3627136_s3430863_GA: F{problem_id}, {info['param']}",
+                                    algorithm_info=f"Practical assignment of the EA course."
+                                    )
+    else:
+        ga_logger = logger.Analyzer(root="data",
+                                    folder_name="run",
+                                    algorithm_name=f"s3627136_s3430863_GA: F{problem_id}",
+                                    algorithm_info=f"Practical assignment of the EA course."
+                                    )
     problem.attach_logger(ga_logger)
 
+    if info is not None:
+        print(f"INFO: {info['param']}")
     for run in range(RUNS):
         print(f"Runs: {run + 1}")
         algorithm(problem)
         problem.reset()
         algorithm.reset()
 
+    ga_logger.close()
     end = time.time()
     print("The program takes %s seconds" % (end - start))
 
 
-ga_main(ga_args_dict, 18)
+def reproduce_report(args_dict, problem_id, param):
+    """Reproduce fine-tuning results in our report."""
+    if param == "p_size":
+        pop_dict = copy.deepcopy(args_dict)
+        for pop_k in [2, 5, 10, 20, 25]:
+            pop_dict["population_size"] = pop_k
+            ga_main(pop_dict, problem_id, {"run": "population size", "param": f"p_size={pop_k}"})
+    elif param == "m_rate":
+        mu_dict = copy.deepcopy(args_dict)
+        mu_char = [0.02, 0.05, 0.1, "piecewise"]
+        mu_lst = [1 / DIMENSION, 0.05, 0.1, -1.0]
+        for i in range(len(mu_lst)):
+            mu_dict["mutation_rate"] = mu_lst[i]
+            ga_main(mu_dict, problem_id, {"run": "mutation rate", "param": f"m_rate={mu_char[i]}"})
+    elif param == "u_rate":
+        u_dict = copy.deepcopy(args_dict)
+        for ur in [0.2, 0.4, 0.8, 1]:
+            u_dict["update_ratio"] = ur
+            ga_main(u_dict, problem_id, {"run": "update ratio", "param": f"u_rate={ur}"})
+    else:
+        raise KeyError("Inputs are invalid.")
+
+
+if __name__ == "__main__":
+    # F18: fine-tuning
+    # Population size
+    reproduce_report(ga_f18_args_dict, 18, "p_size")
+    # Mutation rate
+    reproduce_report(ga_f18_args_dict, 18, "m_rate")
+    # Update ratio
+    reproduce_report(ga_f18_args_dict, 18, "u_rate")
+
+    # F18: final results
+    ga_main(ga_f18_args_dict, 18)
+
+    # F19: fine-tuning
+    # Population size
+    reproduce_report(ga_f19_args_dict, 19, "p_size")
+    # Mutation rate
+    reproduce_report(ga_f19_args_dict, 19, "m_rate")
+    # Update ratio
+    reproduce_report(ga_f19_args_dict, 19, "u_rate")
+
+    # F19: final results
+    ga_main(ga_f19_args_dict, 19)
