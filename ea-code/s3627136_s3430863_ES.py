@@ -7,23 +7,22 @@ import time
 import copy
 
 BUDGET = 5000
-DIMENSION = 50 
+DIMENSION = 50
 population_size = 20  # population size *
 MU = 5  # Number of parents to select
 LAMBDA = 20  # Number of offspring to generate *
 RUNS = 20
 SEED = 42
-Mutate_StepSize = 0.5 # step size
+Mutate_StepSize = 0.5  # step size
 
-# Step size
 
 es_f18_args_dict = {"population_size": population_size, "lambda_": LAMBDA, "dim": DIMENSION, "budget": BUDGET,
-                    "seed": SEED, "mu": MU, "stepSize" : Mutate_StepSize}
+                    "seed": SEED, "mu": MU, "stepSize": Mutate_StepSize}
 es_f19_args_dict = {"population_size": population_size, "lambda_": LAMBDA, "dim": DIMENSION, "budget": BUDGET,
-                    "seed": SEED, "mu": MU, "stepSize" : Mutate_StepSize}
+                    "seed": SEED, "mu": MU, "stepSize": Mutate_StepSize}
 
 
-class ES():
+class ES:
     def __init__(self, population_size, dim, problem, seed, budget, stepSize, mu, lambda_):
         self.population_size = population_size
         self.dimension = dim
@@ -32,9 +31,9 @@ class ES():
         self.fixed_seed = seed
         self.seed = self.fixed_seed
         self._sigma = stepSize
-        self.tau =  1.0 / np.sqrt(self.problem.meta_data.n_variables)
-        self.mu_ = mu # Control the number of parent
-        self.lambda_ = lambda_ # Number of offspring
+        self.tau = 1.0 / np.sqrt(self.problem.meta_data.n_variables)
+        self.mu_ = mu  # Control the number of parent
+        self.lambda_ = lambda_  # Number of offspring
         self.step = 0
 
         # init population
@@ -42,62 +41,60 @@ class ES():
         self.parents_sigma = []
         self.parents_fitness = []
 
-        self.childs = []
-        self.childs_sigma = []
-        self.childs_fitness = []
-    
-    
+        self.children = []
+        self.children_sigma = []
+        self.children_fitness = []
+
     def initial_population(self):
         self.parents = np.random.normal(0, 1, size=(self.population_size, self.dimension))
         self.parents_sigma = [self._sigma] * self.population_size
 
     def mutate_oneSigma(self):
-        for i in range(len(self.childs)):
-            self.childs_sigma[i] = self.childs_sigma[i] * np.exp(np.random.normal(0, self.tau))
-            for j in range(len(self.childs[i])):
-                self.childs[i][j] = self.childs[i][j] + np.random.normal(0, self.childs_sigma[i])
-    
+        for i in range(len(self.children)):
+            self.children_sigma[i] = self.children_sigma[i] * np.exp(np.random.normal(0, self.tau))
+            for j in range(len(self.children[i])):
+                self.children[i][j] = self.children[i][j] + np.random.normal(0, self.children_sigma[i])
+
     def gaussian_to_uniform(self, individual):
         ind_uniform = st.norm.cdf(individual)
         for i, element in enumerate(ind_uniform):
             ind_uniform[i] = 1 if element >= 0.5 else 0
         return ind_uniform.astype(int)
-    
-    def recombination(self):    
+
+    def recombination(self):
         for i in range(self.lambda_):
-            [p1,p2] = np.random.choice(len(self.parents), 2, replace = False)
-            offspring = (self.parents[p1] + self.parents[p2])/2
-            sigma = (self.parents_sigma[p1] + self.parents_sigma[p2])/2    
-            self.childs.append(offspring)    
-            self.childs_sigma.append(sigma)
-    
+            [p1, p2] = np.random.choice(len(self.parents), 2, replace=False)
+            offspring = (self.parents[p1] + self.parents[p2]) / 2
+            sigma = (self.parents_sigma[p1] + self.parents_sigma[p2]) / 2
+            self.children.append(offspring)
+            self.children_sigma.append(sigma)
+
     def evaluation(self, pops):
         if self.step + len(pops) <= self.budget:
             self.step += len(pops)
             fitness = [self.problem(self.gaussian_to_uniform(ind)) for ind in pops]
         else:
-            fitness = [self.problem(self.gaussian_to_uniform(ind)) for ind in pops[:self.budget-self.step]]
+            fitness = [self.problem(self.gaussian_to_uniform(ind)) for ind in pops[:self.budget - self.step]]
             self.step = self.budget
         return fitness
-    
+
     def Selection(self):
-        rank = np.argsort(self.childs_fitness)
-        self.parents = [self.childs[i] for i in rank][-self.mu_:] 
-        self.parents_sigma = [self.childs_sigma[i] for i in rank][-self.mu_:] 
-        self.parents_fitness = [self.childs_fitness[i] for i in rank][-self.mu_:] 
-        
+        rank = np.argsort(self.children_fitness)
+        self.parents = [self.children[i] for i in rank][-self.mu_:]
+        self.parents_sigma = [self.children_sigma[i] for i in rank][-self.mu_:]
+        self.parents_fitness = [self.children_fitness[i] for i in rank][-self.mu_:]
+
     def clear_(self):
         self.parents = []
         self.parents_sigma = []
         self.parents_fitness = []
-        self.childs = []
-        self.childs_sigma = []
-        self.childs_fitness = []
+        self.children = []
+        self.children_sigma = []
+        self.children_fitness = []
         self.step = 0
         self.fixed_seed += 1
         self.seed = self.fixed_seed
 
-    
     def __call__(self):
         # Initialization
         self.initial_population()
@@ -105,13 +102,13 @@ class ES():
         np.random.seed(self.seed)
 
         # Loop
-        while self.step < self.budget:   
+        while self.step < self.budget:
             # Recombination
             self.recombination()
             # Mutation
             self.mutate_oneSigma()
             # Evaluation Fitness
-            self.childs_fitness = self.evaluation(self.childs)
+            self.children_fitness = self.evaluation(self.children)
             # Selection
             self.Selection()
 
@@ -121,7 +118,7 @@ class ES():
 
 def es_main(es_args, problem_id, info=None):
     """Run the ES algorithm.
-    :param ga_args: dict. Parameters defined in ES algorithm.
+    :param es_args: dict. Parameters defined in ES algorithm.
     :param problem_id: int. 18 or 19.
     :param info: dict. The information of the algorithm.
     """
@@ -149,10 +146,10 @@ def es_main(es_args, problem_id, info=None):
         print(f"Runs: {run + 1}")
         algorithm()
 
-
     es_logger.close()
     end = time.time()
     print("The program takes %s seconds" % (end - start))
+
 
 def reproduce_report(args_dict, problem_id, param):
     """Reproduce fine-tuning results in our report."""
@@ -164,18 +161,18 @@ def reproduce_report(args_dict, problem_id, param):
 
     elif param == "s_size":
         step_dict = copy.deepcopy(args_dict)
-        for ss in  [0.1, 0.3, 0.5, 0.7, 0.9]:
+        for ss in [0.1, 0.3, 0.5, 0.7, 0.9]:
             step_dict["stepSize"] = ss
             es_main(step_dict, problem_id, {"run": "Step size", "param": f"s_size={ss}"})
 
-    elif param == "o_size": # offspring size
+    elif param == "o_size":  # offspring size
         lbd_dict = copy.deepcopy(args_dict)
-        for lbd in  [20, 40, 60, 80, 100]:
+        for lbd in [20, 40, 60, 80, 100]:
             lbd_dict["lambda_"] = lbd
             es_main(lbd_dict, problem_id, {"run": "Offspring size", "param": f"o_size={lbd}"})
     else:
         raise KeyError("Inputs are invalid.")
-    
+
 
 if __name__ == "__main__":
     # F18: fine-tuning
@@ -187,7 +184,7 @@ if __name__ == "__main__":
     reproduce_report(es_f18_args_dict, 18, "o_size")
 
     # F18: final results
-    # es_main(es_f18_args_dict, 18)
+    es_main(es_f18_args_dict, 18)
 
     # F19: fine-tuning
     # Population size
@@ -197,5 +194,5 @@ if __name__ == "__main__":
     # Offspring size
     reproduce_report(es_f19_args_dict, 19, "o_size")
 
-    # # F19: final results
-    # es_main(es_f19_args_dict, 19)
+    # F19: final results
+    es_main(es_f19_args_dict, 19)
