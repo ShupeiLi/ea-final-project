@@ -1,6 +1,6 @@
 # GA Logs
 ## Table of Contents
-- [Pilot Experments](#pilot-experiments-on-problem-18)
+- [Pilot Experiments](#pilot-experiments-on-problem-18)
 - [F18 Fine-tuning](#f18-fine-tuning)
 - [F19 Fine-tuning](#f19-fine-tuning)
 
@@ -59,7 +59,7 @@ mix 2-1-2, prop->rank->tour
 ### Population Size
 |p_size|AUC|avg. fitness|max|median|
 |:----:|:---:|:---:|:---:|:---:|
-|2  |0.379332727272727  |2.62  |3.12   |2.62   |
+|2  |0.379332727272727  |2.66  |3.12   |2.62   |
 |5  |0.419120454545454  |3.23  |3.71   |3.28   |
 |10 |0.451300909090909  |3.70  |5.36   |3.71   |
 |20 |0.463674090909091  |3.90  |4.72   |3.89   |
