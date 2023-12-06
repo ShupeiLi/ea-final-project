@@ -32,11 +32,10 @@
 \title{Pratical Assignment: Solving PBO Problems with Evolutionary Algorithms}
 
 
-% TODO: Modify the email
 \author{
  Xiang He\\
   s3627136\\
-  \texttt{1234@umail.leidenuniv.nl}\\
+  \texttt{x.he.4@umail.leidenuniv.nl}\\
   %% examples of more authors
    \And
  Shupei Li\\
@@ -345,6 +344,152 @@ We set the random seed to 42 when running the genetic algorithm.
 
 \subsection{Evolution Strategy}
 
+Differing from Genetic Algorithms which focus on recombination and selection strategies to find the global optimum in discrete spaces. Evolution Strategies emphasize self-adaptation through mutating with Gaussian perturbations, which achieve convergence in continuous spaces by iterating local optimal selections.
+
+\begin{algorithm}[!ht]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}\SetKwInOut{Termination}{Termination}
+
+\Input{Budget $B$, \\Problem dimension $n$, \\Population size $\mu$, \\Mutation step-size \( \sigma \), \\Offspring size \( \lambda \), \\Objective function $F$}
+\Termination{The algorithm terminates when $B \leq 0$.}
+\SetKwFunction{FSelection}{Selection}
+\SetKwFunction{FCrossover}{Crossover}
+\SetKwFunction{FMutation}{Mutation}
+\SetKwFunction{FRecombination}{Recombination}
+\SetKwFunction{FEvaluation}{Evaluation}
+\SetKwFunction{FConversion}{Gaussian\_to\_uniform}
+\SetKwProg{Fn}{Function}{:}{}
+\BlankLine
+
+Initialize the population $\mathcal{D}^{(0)} = \{\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_{\mu}\}$ by random sampling from normal distribution $\mathcal{N}(0,1)$;
+
+\BlankLine
+\While{$B > 0$}{
+    $\mathcal{O}$ = \FRecombination{$\mathcal{D}^{(t)}$}\;
+    $\mathcal{O}'$ = \FMutation{$\mathcal{O}$, \( \sigma \)}\;
+    fitness = \FEvaluation{$\mathcal{D}^{(t)}$ + $\mathcal{O}'$, $F$, $B$}\;
+    $\mathcal{D}^{(t+1)}$ = \FSelection{$\mathcal{D}^{(t)}$ + $\mathcal{O}'$, fitness}\;
+}
+
+\BlankLine
+\Fn{\FEvaluation{$\mathcal{D}$, $F$, $B$}}{
+    \For{$i = 1$ \KwTo $\mathcal{D}$.size}{
+        $\mathbf{x}_{i}'$ = \FConversion{$\mathbf{x}_i$}\;
+        $\mathbf{x}_{i}'$.fitness = $F\left( \mathbf{x}_{i}' \right) $\;
+        $B$ = $B$ - 1\;
+    }
+    Sort $\mathcal{D}$ in ascending order according to fitness values\;
+}
+
+\BlankLine
+\Fn{\FConversion{$\mathbf{x}_i$}}{
+    $\mathbf{x}_{i}'$ = st.norm.cdf($\mathbf{x}_{i}$)\;
+    \For{$j = 1$ \KwTo $\mathbf{x}_{i}'$.size}{
+        \If{$\mathbf{x}_{i}'[i] \geq 0.5$}{
+            $\mathbf{x}_{i}'[i] = 1$\;
+        }
+        \Else{
+            $\mathbf{x}_{i}'[i] = 0$\;
+        }
+    }
+    \KwRet{$\mathbf{x}_{i}'$}\;
+}
+
+\caption{Overview of Evolution Strategies}\label{al:es-outline}
+\end{algorithm}
+
+Evolution Strategies are designed for real-valued spaces \(\mathbb{R}^n\) in general, which cannot apply to binary problems directly like F18 and F19. Therefore, we implement the evolution strategies on continuous spaces, starting by initializing the populations through random sampling on the normal distribution (0,1). Moreover, we initialize the mutation step sizes (sigma) for each population with a fixed value, which corresponds to our one-step size(sigma) mutation strategies. 
+
+To evaluate the normal distribution populations on binary searching space, we designed a method to convert the Gaussian distribution individual into the binary representation. Function Gaussian\_to\_uniform in Algorithm \ref{al:es-outline} illustrates this conversion.
+
+
+The function st.norm.cdf() from Scipy applies the cumulative distribution function on individual $\mathbf{x_i}$. Which considers each element in $\mathbf{x_i}$ as an observation value and calculates the cumulative probabilities of the lower or equal to the value in the normal distribution space.  Therefore, we convert the normal distribution values into probability values in the range of [0, 1], and map these values to binary {0, 1} through a threshold of 0.5. Values with probabilities greater or equal to 0.5 are assigned to 1, whereas those below the threshold are mapped to 0. 
+
+\subsubsection{Intermediate Recombination}
+
+\begin{algorithm}[!ht]
+\SetAlgoLined
+\SetKwProg{Fn}{Function}{:}{}
+\SetKwFunction{FRecombination}{Recombination}
+\BlankLine
+\Fn{\FRecombination{$\mathcal{D}$, \( \lambda \)}}{
+    Generating offspring $\mathcal{O} = \{\mathbf{x}_{o1}, \mathbf{x}_{o2}, \dots, \mathbf{x}_{o\lambda}\}$ with the corresponding $ \sigma _{oi}$ for each $x_{oi}$\;
+
+    \For{$i = 1$ \KwTo \( \lambda \)}{
+        $x_{p1}$, $x_{p2}$ = $\text{Random select 2 unique individuals from $\mathcal{D}$}$\;
+        $x_{oi}$ = $(x_{p1} + x_{p2}) / 2$\;
+        $ \sigma _{oi}$ = $(\sigma _{p1} + \sigma _{p2}) / 2$\;
+        $\mathcal{O}$ \text{append} ($x_{oi}$, $ \sigma _{oi}$)\;
+    }
+}
+
+\caption{Evolution Strategies: Intermediate Recombination}\label{al:es-recombine}
+\end{algorithm}
+
+Intermediate recombination aims to generate offspring and corresponding mutate step size by calculating the mean value at each operator of two randomly chosen parents as Algorithm \ref{al:es-recombine}. Compared with discrete recombination, this method focuses on generating smoother offspring, emphasizing a stable convergence during the evolutionary process.
+
+\subsubsection{Mutation}
+
+Mutation is an essential part of evolution strategies, which introduce the self-adaptation mechanism into the optimization process. Mutation adds perturbations which randomly sample from the Gaussian distribution to the population. These perturbations allow the algorithm to search on a local solution space. Then we can define the selection function to find the optimal in the local solution space, and iteratively move in that direction until reaching the global optimization. 
+
+Therefore, the mutation step size $\sigma$ and learning rate $\tau$ control the convergence speed of evolution strategies. There we use a one-sigma mutation, which means all search variables in an individual share one sigma. This approach implements a simple adaptation mechanism and reduces the parameter space, which leads to efficient self-adaptation. 
+
+
+\begin{algorithm}[!ht]
+\SetAlgoLined
+\SetKwProg{Fn}{Function}{:}{}
+\SetKwFunction{FMutation}{Mutation}
+\BlankLine
+\Fn{\FMutation{$\mathcal{O}$, \( \sigma \)}}{
+    Learning rate $\tau = 1.0 / \sqrt{N} $\;
+    \For{$i = 1$ \KwTo \( \lambda \)}{
+        $\sigma_{oi}'$ = $\sigma_{oi} \times d  \sim  \mathcal{N}(0, \tau)$\;
+        \For{$j = 1$ \KwTo $x_{oi}$.length}{
+            $x_{oi}[j] = x_{oi} + d'  \sim  \mathcal{N}(0, \sigma_{oi}') $
+        }
+    }
+    Mutate all individuals in offspring $\mathcal{O}$\;
+}
+
+\caption{Evolution Strategies: One-\(\sigma\) Mutation}\label{al:es-mutation}
+\end{algorithm}
+
+Algorithm \ref{al:es-mutation} illustrates the One-\(\sigma\) Mutation process. For each individual, the step size $\sigma$ is first mutated from a normal distribution according to learning rate $\tau$. Then all variables in the individual are added to a random normal distribution perturbation according to the mutated $\sigma'$.
+
+\subsubsection{Selection}
+
+\begin{algorithm}[!ht]
+\SetAlgoLined
+\SetKwProg{Fn}{Function}{:}{}
+\SetKwFunction{FSelection}{Selection}
+\BlankLine
+\Fn{\FSelection{$\mathcal{D}$, fitness}}{
+    Ranking $x_i$ in $\mathcal{D}$ base on fitness, $i = \{1, 2, \dots, \mu + \lambda\}$\;
+    
+    $\mathcal{D}^{(t+1)}$ = top $\mu$ $x_i$ in $\mathcal{D}$\;
+}
+
+\caption{Evolution Strategies: selection}\label{al:es-selection}
+\end{algorithm}
+
+We implement the $(\mu + \lambda)$- selection to rank the individuals both on parents and offspring and select the top -$\mu$ individuals as the parents in the next generation. Which means that we only accept the individuals with improvement. 
+
+\subsubsection{Hyperparameter Settings}
+We conducted experiments to optimize three parameters: population size $\mu$, offspring size $\lambda$, and mutation step size $\sigma$. Due to the size of $\lambda$ should always be greater than $\mu$, we used $\lambda_{rate}$ instead. Therefore, the final offspring size should be $\lambda_{rate} * \mu$. Additionally, the impact of different $\lambda_{rate}$ may vary depending on the population size $\mu$. We first experiment with $\mu$ and $\sigma$ to find the best parameter combinations, then experiment with $\lambda_{rate}$ to determine the final parameters. The experiment results are presented in Section $\ref{sec:experi}$. We set a random seed 42 for the code to ensure results can be reproduced. The rest hyper-parameter settings are listed in Table \ref{tab:al-es-hyper}.
+
+\begin{table}[!ht]
+    \centering
+    \caption{Hyperparameter settings of the evolution strategies.}
+    \label{tab:al-es-hyper}
+    \begin{tabular}{lll}
+       \toprule
+       \textbf{Hyperparameter} & \textbf{Meaning} & \textbf{Value}\\
+       \midrule
+       $B$ & budget & 5,000\\
+       $n$ & problem dimension & 50\\
+       \bottomrule
+    \end{tabular}
+\end{table}
 
 \section{Experimental Results}\label{sec:experi}
 \subsection{Metrics}
@@ -395,12 +540,12 @@ Figure \ref{fig:experi-ga-psize-ecdf} and Figure \ref{fig:experi-ga-psize-ert} s
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/psize_ecdf.png}
-        \caption{F18 population size fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
+        \caption{GA F18 population size fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/psize_ecdf.png}
-        \caption{F19 population size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
+        \caption{GA F19 population size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
     \end{subfigure}
     \caption{ECDF curves of the genetic algorithm with various population size settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-psize-ecdf}
@@ -409,12 +554,12 @@ Figure \ref{fig:experi-ga-psize-ecdf} and Figure \ref{fig:experi-ga-psize-ert} s
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/psize_ert.png}
-        \caption{F18 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F18 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/psize_ert.png}
-        \caption{F19 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F19 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ERT curves of the genetic algorithm with various population size settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-psize-ert}
@@ -462,12 +607,12 @@ Table \ref{tab:experi-ga-mrate} represents the results of the mutation fine-tuni
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/mrate_ecdf.png}
-        \caption{F18 mutation rate fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
+        \caption{GA F18 mutation rate fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/mrate_ecdf.png}
-        \caption{F19 mutation rate fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
+        \caption{GA F19 mutation rate fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
     \end{subfigure}
     \caption{ECDF curves of the genetic algorithm with various mutation rate settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-mrate-ecdf}
@@ -476,12 +621,12 @@ Table \ref{tab:experi-ga-mrate} represents the results of the mutation fine-tuni
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/mrate_ert.png}
-        \caption{F18 mutation rate fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F18 mutation rate fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/mrate_ert.png}
-        \caption{F19 mutation rate fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F19 mutation rate fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ERT curves of the genetic algorithm with various mutation rate settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-mrate-ert}
@@ -518,12 +663,12 @@ Remember that our genetic algorithm implementation only partially updates the po
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/urate_ecdf.png}
-        \caption{F18 update ratio fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
+        \caption{GA F18 update ratio fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/urate_ecdf.png}
-        \caption{F19 update ratio fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
+        \caption{GA F19 update ratio fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 48, \Delta f = 3.11$.}
     \end{subfigure}
     \caption{ECDF curves of the genetic algorithm with various update ratio settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-urate-ecdf}
@@ -532,12 +677,12 @@ Remember that our genetic algorithm implementation only partially updates the po
 \begin{figure}[!ht]
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/urate_ert.png}
-        \caption{F18 update ratio fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F18 update ratio fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f19/urate_ert.png}
-        \caption{F19 update ratio fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+        \caption{GA F19 update ratio fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ERT curves of the genetic algorithm with various update ratio settings. Figures are downloaded from the IOHanalyzer.}
     \label{fig:experi-ga-urate-ert}
@@ -563,14 +708,242 @@ We run the genetic algorithm 20 times on F18 and F19 with the best hyperparamete
         \end{itemize}
 \end{itemize}
 
-ECDF and ERT curves are the same as those in Figure \ref{fig:experi-ga-urate-ecdf} and Figure \ref{fig:experi-ga-urate-ert} with the update ratio $\theta = 0.4$. We do not plot them again to conserve space. All fine-tuning experiments and the final results of the genetic algorithm can be easily reproduced by running the source code file \texttt{s3627136\_s3430863\_GA.py} in the terminal, i.e., \texttt{python s3627136\_s3430863\_GA.py}.
+ECDF and ERT curves are the same as those in Figure \ref{fig:experi-ga-urate-ecdf} and Figure \ref{fig:experi-ga-urate-ert} with the update ratio $\theta = 0.4$. We do not plot them again to conserve space. All fine-tuning experiments and the final results of the genetic algorithm can be easily reproduced by running the source code file \texttt{s3627136\_s3430863\_GA.py} in the terminal, i.e., \texttt{python s3627136\_s3430863\_GA.py}. Our final GA results of F18 and F19 are saved in \textbf{run} and \textbf{run-1} folders respectively.
 
 \subsection{Evolutionary Strategy}
+\subsubsection{ES Fine-tuning: Population Size}
+
+Population size denotes the number of elite individuals selected in the current generation and is also used to recombine the offspring in the next generation. We compare the algorithm performance by setting the population size to 2, 5, 10, 20, 50.  A larger population size can generate offspring diversity, increasing the probability of finding the optimal solution. In addition, the larger parent should generate more offspring to leverage its diversity advantage. Therefore, we did not use a fixed offspring number but set the $\lambda_{rate} = 2$, which means each population will generate offspring twice its size. The mutation step size $\sigma$ is set as 0.5 in this experiment. Table \ref{tab:experi-es-psize} shows the results of our experiment. Figure \ref{fig:experi-es-psize-ecdf} and Figure \ref{fig:experi-es-psize-ert} show ECDF and ERT curves, respectively.
+
+\begin{table}[!ht]
+    \centering
+    \caption{Summary of statistics and AUC in ES population size fine-tuning.}
+    \label{tab:experi-es-psize}
+    \begin{tabular}{ccccccccc}
+        \toprule
+        \multirow{2}[3]{*}{Population Size $\mu$} &
+        \multicolumn{4}{c}{\textbf{F18}} &
+        \multicolumn{4}{c}{\textbf{F19}}\\
+        \cmidrule(lr){2-5}
+        \cmidrule(lr){6-9}
+        & Mean & Max & Median & AUC & Mean & Max & Median & AUC\\
+        \midrule
+        2   & 3.35 & 4.10 & 3.31 & 0.782 & 42.3  & 46.0 & 42.0 & 0.647\\
+        5   & 3.48 & 3.89 & \textbf{3.54} & \textbf{0.804} & 42.9  & 46.0 & 44.0 & 0.663\\
+        10  & \textbf{3.61} & \textbf{4.86} & \textbf{3.54} & 0.759 & 43.0 & 46.0 & 43.0 & 0.659\\
+        20  & 3.18 & 4.45 & 3.02 & 0.677 & 44.5  & \textbf{48.0} & 44.0 & \textbf{0.684}\\
+        50  & 2.77 & 3.18 & 2.75 & 0.622 & \textbf{45.4 } & \textbf{48.0} & \textbf{46.0} & 0.648\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Table \ref{tab:experi-es-psize} demonstrates that a population size of $\mu = 10$ achieved the best statistical performance, while $\mu = 5$ resulted in the best AUC value on F18. Both ECDF and ERT curves indicate that $\mu = 10$ leads to faster and more stable convergence with better fitness. It is worth noting that a population size of $\mu = 50$ performed the worst. The reason could be this large population size leads to excessive exploration, which decreases the convergence speed in this problem. 
+
+In contrast, for problem F19, the best statistical results are obtained with $\mu = 50$ with considerable AUC. This suggests that for problem F19, we should explore a wider search space. The ECDF and ERT also demonstrate this trend, as the population size of 50 converges smoothly towards the optimal.
+
+In contrast, for problem F19, the best statistical results are obtained with $\mu = 50$ with considerable AUC. This suggests that for problem F19, we should explore a wider search space. The ECDF and ERT also demonstrate this trend, as the population size of 50 converges smoothly towards the optimal solution.
+
+Therefore, we suggest use $\mu = 10$ for F18 and $\mu = 50$ for F19.
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ECDF18ps.png}
+        \caption{ES F18 population size fine-tuning: ECDF curves. $f_{\min} = 0.4, f_{\max} = 3.83, \Delta f = 0.29$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ECDF19ps.png}
+        \caption{ES F19 population size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
+    \end{subfigure}
+    \caption{ECDF curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-psize-ecdf}
+\end{figure}
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ERT18ps.png}
+        \caption{ES F18 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ERT19ps.png}
+        \caption{ES F19 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \caption{ERT curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-psize-ert}
+\end{figure}
+
+\subsubsection{ES Fine-tuning: Mutation Step Size}
+
+The mutation step size $\sigma$ controls the perturbation extent of the individual. A larger $\sigma$ allows individuals to explore the search space faster but may cause them to skip the optimal solutions. If the mutation step size is too small, the algorithm could converge slowly and land into the local optima. In this experiment, we set the $\sigma$ to 0.1, 0.3, 0.5, 0.7, 0.9. Setting the $\mu = 20$ and $\lambda_{rate} = 2$. The statistic and AUC results shown in Table \ref{tab:experi-es-ssize}, Figure \ref{fig:experi-es-ssize-ecdf} and Figure \ref{fig:experi-es-ssize-ert} show ECDF and ERT curves, respectively.
+
+
+\begin{table}[!ht]
+    \centering
+    \caption{Summary of statistics and AUC in ES mutation step size fine-tuning.}
+    \label{tab:experi-es-ssize}
+    \begin{tabular}{ccccccccc}
+        \toprule
+        \multirow{2}[3]{*}{Step size $\sigma$} &
+        \multicolumn{4}{c}{\textbf{F18}} &
+        \multicolumn{4}{c}{\textbf{F19}}\\
+        \cmidrule(lr){2-5}
+        \cmidrule(lr){6-9}
+        & Mean & Max & Median & AUC & Mean & Max & Median & AUC\\
+        \midrule
+        0.1  & 3.21 & 4.10 & 3.14 & 0.736 & 41.4 & 44.0 & 42.0 & 0.615 \\
+        0.3  & \textbf{3.57} & 4.33 & \textbf{3.66} & \textbf{0.738} & 43.6 & 46.0 & 44.0 & 0.667\\
+        0.5  & 3.52 & 4.45 & 3.58 & 0.699 & 44.2 & \textbf{48.0} & 44.0 & 0.674\\
+        0.7  & 3.05 & 4.58 & 2.83 & 0.652 & \textbf{45.1} & \textbf{48.0} & \textbf{46.0} & \textbf{0.686}\\
+        0.9  & 2.89 & \textbf{5.02} & 2.64 & 0.623 & 45.0 & \textbf{48.0} & 44.0 & 0.681\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+To F18, $\sigma=0.3$ produced the best results in all evaluations except for the maximum value. In the ERT experiment, the curve of $\sigma=0.5$ produced better results but converged slower than $\sigma=0.3$. When using $\sigma=0.9$ as the step size, the mean, median, and AUC values were worst, despite achieving a high maximum value of $5.02$. As we mentioned, the excessive search speed leads to the optimal solution being skipped. 
+
+To the problem F19, The value of $\sigma=0.7$ produced impressive results in all measurements. This trend was also reflected in the ECDF and ERT curves. It's worth mentioning that $\sigma=0.9$ resulted in sub-optimal results for this problem, indicating that the algorithm needs to explore a larger search space to solve F19. This conclusion aligns with our findings in the population size fine-tuning experiment.
+
+Therefore, we suggest to set the $\sigma=0.3$ for F18 and $\sigma=0.7$ for F19.
+
+
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ECDF18ss.png}
+        \caption{ES F18 mutation step size fine-tuning: ECDF curves. $f_{\min} = 0.0, f_{\max} = 3.90, \Delta f = 0.29$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ECDF19ss.png}
+        \caption{ES F19 mutation step size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
+    \end{subfigure}
+    \caption{ECDF curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-ssize-ecdf}
+\end{figure}
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ERT18ss.png}
+        \caption{ES F18 mutation step size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ERT19ss.png}
+        \caption{ES F19 mutation step size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \caption{ES ERT curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-ssize-ert}
+\end{figure}
+
+\subsubsection{ES Fine-tuning: Offspring size}
+
+We explore the effects of offspring size on the algorithm's performance based on the combination of our best $\mu$ and $\sigma$. Table \ref{tab:al-es-os-hyper} shows the settings for F18 and F19. We set the $\lambda_{rate}$ to 1.5, 2, 2.5, 5, 10. Increasing the size of offspring allows the algorithm to explore the search space more extensively. However, in this assignment, due to the budget limitation, a large size of offspring leads to a significant increase in the evaluation budget per generation, causing the algorithm to fail to converge. We also compared the offspring size experiment results with the optimal results from previous experiments to determine the final parameters. The experiment ID and parameters setting are shown in Table \ref{tab:al-es-os-hyper}.
+
+
+\begin{table}[!ht]
+    \centering
+    \caption{Hyperparameter settings of the Offspring size experiment.}
+    \label{tab:al-es-os-hyper}
+    \begin{tabular}{llll}
+       \toprule
+       \textbf{Experiment ID} & \textbf{Population size $\mu$} & \textbf{Mutation step size $\sigma$} & \textbf{Offspring size $\lambda_{rate}$}\\
+       \midrule
+       $F18$-$\lambda_{rate}$-experiment & 10 & 0.3 & fine-tuning\\
+       $F19$-$\lambda_{rate}$-experiment & 50 & 0.7 & fine-tuning\\
+       $F18$-$\mu$-optimal & 10 & 0.5 & 2.0\\
+       $F18$-$\sigma$-optimal & 20 & 0.3 & 2.0\\
+       $F19$-$\mu$-optimal & 50 & 0.5 & 2.0\\
+       $F19$-$\sigma$-optimal & 20 & 0.7 & 2.0\\
+       
+       \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Summary of statistics and AUC in ES offspring size fine-tuning and previous optimal results.}
+    \label{tab:experi-es-osize}
+    \begin{tabular}{ccccccccc}
+        \toprule
+        \multirow{2}[3]{*}{offspring size $\lambda_{rate}$} &
+        \multicolumn{4}{c}{\textbf{F18}} &
+        \multicolumn{4}{c}{\textbf{F19}}\\
+        \cmidrule(lr){2-5}
+        \cmidrule(lr){6-9}
+        & Mean & Max & Median & AUC & Mean & Max & Median & AUC\\
+        \midrule
+        1.5   & \underline{3.56} & \underline{4.72} & 3.42 & 0.789& 45.2& 48.0& 45.0& 0.647\\
+        2.0   & 3.55 & 4.21 & \underline{3.46} &\underline{\textbf{ 0.808}}& \underline{\textbf{45.9}}& 48.0 & \underline{\textbf{46.0}} & \underline{0.652}\\
+        2.5   & 3.52 & 4.21 & 3.42 & 0.776& \underline{\textbf{45.9}}& 48.0 & \underline{\textbf{46.0}} & 0.646\\
+        5.0   & 3.56 & 4.33 & \underline{3.46} & 0.796& 45.8& \underline{\textbf{50.0}}& \underline{\textbf{46.0}} & 0.620\\
+        10.0  & 3.47 & 4.33 & 3.42 & 0.750& 43.7& 46.0& 44.0 & 0.575\\
+        \midrule
+        $\mu$ optimal  & \textbf{3.61} & \textbf{4.86} & 3.54 & 0.759 & 45.4  & 48.0 & \underline{\textbf{46.0}} & 0.648\\
+        $\sigma$ optimal & 3.57 & 4.33 & \textbf{3.66} & 0.738 & 45.1 & 48.0 & \textbf{46.0} & \textbf{0.686}\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+In Table \ref{tab:experi-es-osize}, the first section shows the results of the $\lambda_{rate}$ experiment. The $\lambda_{rate}=2.0$ default used in previous experiments still achieves superior results for F18 and F19. The ERT Figure \ref{fig:experi-es-osize-ert} and ECDF Figure \ref{fig:experi-es-osize-ecdf} show that similar results are obtained for all parameters except the largest $\lambda_{rate}=10$.
+
+In comparison to previous experiments, the $F18$-$\mu$-optimal continues to produce optimal statistical results for F18. While the statistical results for F19 were similar, the $F19$-$\sigma$-optimal achieved a higher AUC. Therefore, we suggest to set $\mu = 10$, $\sigma = 0.5$, $\lambda_{rate} = 2.0$ for  F18 and $\mu = 20$, $\sigma = 0.7$, $\lambda_{rate} = 2.0$ for  F19 as final results. 
+
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ECDF18lbd.png}
+        \caption{ES F18 offspring size fine-tuning: ECDF curves. $f_{\min} = 0.4, f_{\max} = 3.83, \Delta f = 0.29$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ECDF19lbd.png}
+        \caption{ES F19 offspring size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
+    \end{subfigure}
+    \caption{ECDF curves of the evolution strategies with various offspring size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-osize-ecdf}
+\end{figure}
+
+\begin{figure}[!ht]
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f18/ERT18lbd.png}
+        \caption{ES F18 offspring size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.95\linewidth}
+        \includegraphics[width=\linewidth]{es/f19/ERT19lbd.png}
+        \caption{ES F19 offspring size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
+    \end{subfigure}
+    \caption{ES ERT curves of the evolution strategies with various offspring size settings. Figures are downloaded from the IOHanalyzer.}
+    \label{fig:experi-es-osize-ert}
+\end{figure}
+
+\subsubsection{ES Final Results}
+We summarize the final results of our implementation of the evolution strategies as follows:
+
+\begin{itemize}
+    \item \textbf{F18}
+        \begin{itemize}
+            \item Hyperparameter settings: random seed $42$, budget $B = 5,000$, problem dimension $n = 50$, population size $\mu = 10$, mutation step size $\sigma = 0.5$ and offspring size $\lambda_{rate} = 2.0$.
+            \item Statistics: the averaged best-found fitness $f(x)$ = 3.61, the median of best-found fitness $f(x)$ = 3.54, the maximum of best-found fitness $f(x)$ = 4.86.
+            \item AUC: 0.759.
+        \end{itemize}
+    \item \textbf{F19}
+        \begin{itemize}
+            \item Hyperparameter settings: random seed $42$, budget $B = 5,000$, problem dimension $n = 50$, population size $\mu = 20$, mutation step size $\sigma = 0.7$ and offspring size $\lambda_{rate} = 2.0$.
+            \item Statistics: the averaged best-found fitness $f(x)$ = 45.1, the median of best-found fitness $f(x)$ = 46.0, the maximum of best-found fitness $f(x)$ = 48.0.
+            \item AUC: 0.686.
+        \end{itemize}
+\end{itemize}
+
+ All fine-tuning experiments results can be reproduced by running the source code file \texttt{s3627136\_s3430863\_ES.py} in the terminal, i.e., \texttt{python s3627136\_s3430863\_ES.py}. After the script is executed, the best results of F18 correspond to the folder \textbf{data/population size p\_size=10 run}, and best results of F19 correspond to the folder \textbf{data/Step size s\_size=0.7 run-1=10 run}.
 
 
 \section{Discussion and Conclusion}
 \label{sec:dis&res}
-% TODO: Remember to write the future work.
+In this assignment, we implement genetic algorithms and evolutionary strategies to solve the F18 and F19 problems from the IOHprofiler. We explore various search strategies and fine-tuning parameters to improve algorithm performance. In the evolutionary algorithm, we combine three classical selection algorithms in the selection phase, according to each algorithm's advantages, to balance exploitation and exploration. In addition, we fine-tune the key parameters such as population size, mutation rate and update ratio. Then, we determine the optimal parameter settings by evaluating the averaged best-found fitness, the median of best-found fitness, the maximum of best-found fitness, AUC, ECDF, and ERT. Within the evolution strategies, we initialize the population through Gaussian distribution in the real value space, then map the solutions into the binary distribution via cdf to interact with the problem. Moreover, we conduct experiments with population size, mutation step size, and offspring size to fine-tune the algorithm parameters.
+ 
+Overall, the genetic algorithm achieves a better performance. The evolution strategies may suffer the loss from the value domain transformation. Neither algorithm is able to find the optimal solution due to budget constraints. In future research, we plan to explore more strategies and fine-tune the algorithm parameters to converge to the optimal solution with as few budgets as possible.
 
 
 \bibliographystyle{unsrt}  
