@@ -538,6 +538,7 @@ The population size decides the scale of solutions we keep track of at a specifi
 Figure \ref{fig:experi-ga-psize-ecdf} and Figure \ref{fig:experi-ga-psize-ert} show ECDF and ERT curves, respectively.
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/psize_ecdf.png}
         \caption{GA F18 population size fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
@@ -552,6 +553,7 @@ Figure \ref{fig:experi-ga-psize-ecdf} and Figure \ref{fig:experi-ga-psize-ert} s
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/psize_ert.png}
         \caption{GA F18 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
@@ -605,6 +607,7 @@ Table \ref{tab:experi-ga-mrate} represents the results of the mutation fine-tuni
 \end{table}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/mrate_ecdf.png}
         \caption{GA F18 mutation rate fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
@@ -619,6 +622,7 @@ Table \ref{tab:experi-ga-mrate} represents the results of the mutation fine-tuni
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/mrate_ert.png}
         \caption{GA F18 mutation rate fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
@@ -661,6 +665,7 @@ Remember that our genetic algorithm implementation only partially updates the po
 \end{table}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/urate_ecdf.png}
         \caption{GA F18 update ratio fine-tuning: ECDF curves. $f_{\min} = 0.67, f_{\max} = 5.36, \Delta f = 0.52$.}
@@ -675,6 +680,7 @@ Remember that our genetic algorithm implementation only partially updates the po
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
         \includegraphics[width=\linewidth]{ga/f18/urate_ert.png}
         \caption{GA F18 update ratio fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
@@ -708,7 +714,7 @@ We run the genetic algorithm 20 times on F18 and F19 with the best hyperparamete
         \end{itemize}
 \end{itemize}
 
-ECDF and ERT curves are the same as those in Figure \ref{fig:experi-ga-urate-ecdf} and Figure \ref{fig:experi-ga-urate-ert} with the update ratio $\theta = 0.4$. We do not plot them again to conserve space. All fine-tuning experiments and the final results of the genetic algorithm can be easily reproduced by running the source code file \texttt{s3627136\_s3430863\_GA.py} in the terminal, i.e., \texttt{python s3627136\_s3430863\_GA.py}. Our final GA results of F18 and F19 are saved in \textbf{run} and \textbf{run-1} folders respectively.
+ECDF and ERT curves are the same as those in Figure \ref{fig:experi-ga-urate-ecdf} and Figure \ref{fig:experi-ga-urate-ert} with the update ratio $\theta = 0.4$. We do not plot them again to conserve space. All fine-tuning experiments and the final results of the genetic algorithm can be easily reproduced by running the source code file \texttt{s3627136\_s3430863\_GA.py} in the terminal, i.e., \texttt{python s3627136\_s3430863\_GA.py}. Our final GA results of F18 and F19 are saved in \textbf{run} and \textbf{run-1} zip files respectively.
 
 \subsection{Evolutionary Strategy}
 \subsubsection{ES Fine-tuning: Population Size}
@@ -746,13 +752,14 @@ In contrast, for problem F19, the best statistical results are obtained with $\m
 Therefore, we suggest use $\mu = 10$ for F18 and $\mu = 50$ for F19.
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ECDF18ps.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ECDF18ps.png}
         \caption{ES F18 population size fine-tuning: ECDF curves. $f_{\min} = 0.4, f_{\max} = 3.83, \Delta f = 0.29$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ECDF19ps.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ECDF19ps.png}
         \caption{ES F19 population size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
     \end{subfigure}
     \caption{ECDF curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
@@ -760,13 +767,14 @@ Therefore, we suggest use $\mu = 10$ for F18 and $\mu = 50$ for F19.
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ERT18ps.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ERT18ps.png}
         \caption{ES F18 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ERT19ps.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ERT19ps.png}
         \caption{ES F19 population size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ERT curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
@@ -806,16 +814,15 @@ To the problem F19, The value of $\sigma=0.7$ produced impressive results in all
 
 Therefore, we suggest to set the $\sigma=0.3$ for F18 and $\sigma=0.7$ for F19.
 
-
-
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ECDF18ss.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ECDF18ss.png}
         \caption{ES F18 mutation step size fine-tuning: ECDF curves. $f_{\min} = 0.0, f_{\max} = 3.90, \Delta f = 0.29$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ECDF19ss.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ECDF19ss.png}
         \caption{ES F19 mutation step size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
     \end{subfigure}
     \caption{ECDF curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
@@ -823,13 +830,14 @@ Therefore, we suggest to set the $\sigma=0.3$ for F18 and $\sigma=0.7$ for F19.
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ERT18ss.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ERT18ss.png}
         \caption{ES F18 mutation step size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ERT19ss.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ERT19ss.png}
         \caption{ES F19 mutation step size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ES ERT curves of the evolution strategies with various mutation step size settings. Figures are downloaded from the IOHanalyzer.}
@@ -891,13 +899,14 @@ In comparison to previous experiments, the $F18$-$\mu$-optimal continues to prod
 
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ECDF18lbd.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ECDF18lbd.png}
         \caption{ES F18 offspring size fine-tuning: ECDF curves. $f_{\min} = 0.4, f_{\max} = 3.83, \Delta f = 0.29$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ECDF19lbd.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ECDF19lbd.png}
         \caption{ES F19 offspring size fine-tuning: ECDF curves. $f_{\min} = 20, f_{\max} = 50, \Delta f = 3.33$.}
     \end{subfigure}
     \caption{ECDF curves of the evolution strategies with various offspring size settings. Figures are downloaded from the IOHanalyzer.}
@@ -905,13 +914,14 @@ In comparison to previous experiments, the $F18$-$\mu$-optimal continues to prod
 \end{figure}
 
 \begin{figure}[!ht]
+    \centering
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f18/ERT18lbd.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f18/ERT18lbd.png}
         \caption{ES F18 offspring size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \hfill
     \begin{subfigure}[h]{0.95\linewidth}
-        \includegraphics[width=\linewidth]{es/f19/ERT19lbd.png}
+        \includegraphics[width=\linewidth, height=10cm]{es/f19/ERT19lbd.png}
         \caption{ES F19 offspring size fine-tuning: ERT curves. We scale y axis $\log_{10}$.}
     \end{subfigure}
     \caption{ES ERT curves of the evolution strategies with various offspring size settings. Figures are downloaded from the IOHanalyzer.}
