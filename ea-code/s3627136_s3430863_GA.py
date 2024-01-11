@@ -285,22 +285,22 @@ def reproduce_report(args_dict, problem_id, param):
 if __name__ == "__main__":
     # F18: fine-tuning
     # Population size
-    reproduce_report(ga_f18_args_dict, 18, "p_size")
-    # Mutation rate
-    reproduce_report(ga_f18_args_dict, 18, "m_rate")
-    # Update ratio
-    reproduce_report(ga_f18_args_dict, 18, "u_rate")
+    # reproduce_report(ga_f18_args_dict, 18, "p_size")
+    # # Mutation rate
+    # reproduce_report(ga_f18_args_dict, 18, "m_rate")
+    # # Update ratio
+    # reproduce_report(ga_f18_args_dict, 18, "u_rate")
 
     # F18: final results
     ga_main(ga_f18_args_dict, 18)
 
     # F19: fine-tuning
     # Population size
-    reproduce_report(ga_f19_args_dict, 19, "p_size")
-    # Mutation rate
-    reproduce_report(ga_f19_args_dict, 19, "m_rate")
-    # Update ratio
-    reproduce_report(ga_f19_args_dict, 19, "u_rate")
+    # reproduce_report(ga_f19_args_dict, 19, "p_size")
+    # # Mutation rate
+    # reproduce_report(ga_f19_args_dict, 19, "m_rate")
+    # # Update ratio
+    # reproduce_report(ga_f19_args_dict, 19, "u_rate")
 
     # F19: final results
     ga_main(ga_f19_args_dict, 19)
