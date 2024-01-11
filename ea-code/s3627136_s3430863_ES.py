@@ -217,8 +217,8 @@ def final_results():
     except Exception as e:
         print(f"Error: {e}")
     
-    os.rename("./data/population size p_size=10 run" , './data/run')
-    os.rename("./data/Step size s_size=0.7 run-1" , './data/run-1')
+    os.rename("./data/population size p_size=10 run" , './data/es-run-f18')
+    os.rename("./data/Step size s_size=0.7 run-1" , './data/es-run-f19')
 
 if __name__ == "__main__":
     # F18: fine-tuning
