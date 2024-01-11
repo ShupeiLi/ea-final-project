@@ -213,23 +213,26 @@ def final_results():
             folder_name = os.path.basename(folder)
             if folder_name != F18_best_result and folder_name != F19_best_result :
                 shutil.rmtree(folder)
+
     except Exception as e:
         print(f"Error: {e}")
-
+    
+    os.rename("./data/population size p_size=10 run" , './data/run')
+    os.rename("./data/Step size s_size=0.7 run-1" , './data/run-1')
 
 if __name__ == "__main__":
     # F18: fine-tuning
     # Population size
     reproduce_report(es_f18_args_dict, 18, "p_size")
-    # Step size
+    # # Step size
     reproduce_report(es_f18_args_dict, 18, "s_size")
-    # Offspring size
+    # # Offspring size
     reproduce_report(es_f18_args_dict, 18, "lbd_rate")
 
-    # F19: fine-tuning
-    # Population size
+    # # F19: fine-tuning
+    # # Population size
     reproduce_report(es_f19_args_dict, 19, "p_size")
-    # Step size
+    # # Step size
     reproduce_report(es_f19_args_dict, 19, "s_size")
     # Offspring size
     # reproduce_report(es_f19_args_dict, 19, "lbd_rate")
