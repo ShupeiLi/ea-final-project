@@ -3,6 +3,8 @@ from ioh import get_problem
 from ioh import logger, ProblemClass
 import numpy as np
 import scipy.stats as st
+import os
+import shutil
 import time
 import copy
 
@@ -199,7 +201,21 @@ def reproduce_report(args_dict, problem_id, param):
             es_main(lbd_dict, problem_id, {"run": "Offspring size", "param": f"lbd_rate={lbd}"})
     else:
         raise KeyError("Inputs are invalid.")
-    
+
+def final_results():
+    path = "./data"
+    F18_best_result = "population size p_size=10 run" 
+    F19_best_result = "Step size s_size=0.7 run-1"
+    try:
+        folders = [f.path for f in os.scandir(path) if f.is_dir()]
+        for folder in folders:
+            print(os.path.basename(folder))
+            folder_name = os.path.basename(folder)
+            if folder_name != F18_best_result and folder_name != F19_best_result :
+                shutil.rmtree(folder)
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     # F18: fine-tuning
@@ -216,6 +232,9 @@ if __name__ == "__main__":
     # Step size
     reproduce_report(es_f19_args_dict, 19, "s_size")
     # Offspring size
-    reproduce_report(es_f19_args_dict, 19, "lbd_rate")
+    # reproduce_report(es_f19_args_dict, 19, "lbd_rate")
+
+    # Best result
+    final_results()
 
     
