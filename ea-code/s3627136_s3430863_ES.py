@@ -180,13 +180,13 @@ def reproduce_report(args_dict, problem_id, param):
         pop_dict = copy.deepcopy(args_dict)
         for pop_k in [2, 5, 10, 20, 50]:
             pop_dict["population_size"] = pop_k
-            es_main(pop_dict, problem_id, {"run": "population size", "param": f"p_size={pop_k}"})
+            es_main(pop_dict, problem_id, {"run": "special_Mark_population size", "param": f"p_size={pop_k}"})
 
     elif param == "s_size":
         step_dict = copy.deepcopy(args_dict)
         for ss in  [0.1, 0.3, 0.5, 0.7, 0.9]:
             step_dict["stepSize"] = ss
-            es_main(step_dict, problem_id, {"run": "Step size", "param": f"s_size={ss}"})
+            es_main(step_dict, problem_id, {"run": "special_Mark_Step size", "param": f"s_size={ss}"})
 
     elif param == "lbd_rate": # offspring size
         lbd_dict = copy.deepcopy(args_dict)
@@ -198,27 +198,29 @@ def reproduce_report(args_dict, problem_id, param):
             lbd_dict["stepSize"] = 0.7
         for lbd in  [1.5, 2, 2.5, 5, 10]:
             lbd_dict["lambda_rate"] = lbd
-            es_main(lbd_dict, problem_id, {"run": "Offspring size", "param": f"lbd_rate={lbd}"})
+            es_main(lbd_dict, problem_id, {"run": "special_Mark_Offspring size", "param": f"lbd_rate={lbd}"})
     else:
         raise KeyError("Inputs are invalid.")
 
 def final_results():
+    Mark = "special_Mark_"
     path = "./data"
-    F18_best_result = "population size p_size=10 run" 
-    F19_best_result = "Step size s_size=0.7 run-1"
+    F18_best_result = "special_Mark_population size p_size=10 run" 
+    F19_best_result = "special_Mark_Step size s_size=0.7 run-1"
     try:
         folders = [f.path for f in os.scandir(path) if f.is_dir()]
         for folder in folders:
             print(os.path.basename(folder))
             folder_name = os.path.basename(folder)
-            if folder_name != F18_best_result and folder_name != F19_best_result :
-                shutil.rmtree(folder)
+            if len(folder_name) > 13 and folder_name[:13] == Mark:
+                if folder_name != F18_best_result and folder_name != F19_best_result :
+                    shutil.rmtree(folder)
 
     except Exception as e:
         print(f"Error: {e}")
     
-    os.rename("./data/population size p_size=10 run" , './data/es-run-f18')
-    os.rename("./data/Step size s_size=0.7 run-1" , './data/es-run-f19')
+    os.rename("./data/special_Mark_population size p_size=10 run" , './data/es-run-f18')
+    os.rename("./data/special_Mark_Step size s_size=0.7 run-1" , './data/es-run-f19')
 
 if __name__ == "__main__":
     # F18: fine-tuning
